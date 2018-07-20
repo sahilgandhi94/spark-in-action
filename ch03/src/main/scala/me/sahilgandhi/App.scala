@@ -18,7 +18,13 @@ object App extends Application {
     val homeDir = System.getenv("HOME")
     val inputPath = homeDir + "/DATA/github-archive/2015-01-01-0.json"
     val ghLog = spark.read.json(inputPath)
-    
+    val pushes = ghLog.filter("type = 'PushEvent'")
+    pushes.printSchema
+    println("all events: " + ghLog.count)
+    println("only pushes: " + pushes.count)
+    pushes.show(5)
+    val grouped = pushes.groupBy("actor.login").count
+    grouped.show(5)
 
   }
 }
