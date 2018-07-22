@@ -1,4 +1,6 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+from pyspark.sql.types import BooleanType
 
 # create spark session 
 spark = SparkSession.builder\
@@ -28,3 +30,19 @@ ordered = grouped.orderBy("count", ascending=False)
 print(f"type(ordered): {type(ordered)}")
 
 ordered.show(10)
+
+# filter only employees
+
+# load employees in a set
+empPath = "/Users/sahil/Projects/github.com/spark-in-action/ch03/ghEmployees.txt"
+employees = {emp.strip() for emp in open(empPath).readlines()}
+print(f'employee count: {len(employees)}')
+bcEmployees = sc.broadcast(employees) # broadcase the `employees` var
+print(f"type(bcEmployees): {type(bcEmployees)}")
+
+isEmp = lambda user: user in bcEmployees.value
+isEmpUdf = spark.udf.register("SetContainsUdf", isEmp, BooleanType())
+print(f'type(isEmpUdf): {type(isEmpUdf)}')
+
+filteredEmployees = ordered.filter(isEmpUdf(col("login")))
+filteredEmployees.show()
